@@ -45,8 +45,8 @@ Built with React + TypeScript on the front, and a small Node serverless backend 
          "This page doesn't cover that."
 ```
 
-- **Models** (overridable via env): `llama-3.3-70b-versatile` for the final summary and Q&A, `llama-3.1-8b-instant` for per-chunk map steps.
-- **Grounding**: Q&A receives only the extracted page text as context, runs at low temperature, and must return a machine-readable `covered` verdict — the UI displays "not covered" answers distinctly.
+- **Models** (overridable via env): `openai/gpt-oss-120b` for the final summary, `openai/gpt-oss-20b` for per-chunk map steps and Q&A. Model IDs were verified against Groq's live catalogue; empty responses from the reasoning models are retried once automatically, and a single failed chunk never fails a whole summary.
+- **Grounding**: Q&A receives only the extracted page text as context, runs at low temperature, and must return a machine-readable `covered` verdict — the UI displays "not covered" answers distinctly. For long pages, the chunks most relevant to the question are retrieved first (keyword scoring), so questions about later sections work and token use stays low enough for free-tier rate limits.
 - **Why chunk at all?** A long article can exceed a model's comfortable context, and naive truncation silently drops the ending (where conclusions live). Map-reduce summarises every part, then synthesises.
 
 ## Architecture

@@ -1,18 +1,13 @@
-/**
- * Local development API server.
- *
- * In production, the handlers in /api run as Vercel serverless functions:
- * Vercel parses the JSON request body into `req.body` for us and gives us
- * `res.status(...).json(...)`. This tiny node:http server reproduces just
- * enough of that surface to run the *same* handler files locally, so what
- * you test in development is what gets deployed.
- *
- * It also loads a project-root `.env` file (if present) before importing
- * the handlers, mirroring how Vercel injects environment variables.
- *
- * Usage:  node scripts/dev-server.mjs   (or `npm run dev:api`)
- * Port:   API_PORT env var, default 8787. Vite proxies /api here.
- */
+// Local API server for dev.
+//
+// In production the /api handlers run as Vercel functions, where Vercel
+// fills in req.body and gives a res.status().json() to reply with. This
+// mimics just enough of that with plain node:http so the exact same
+// handler files run locally. Also loads a .env from the project root
+// before importing the handlers.
+//
+// Usage: node scripts/dev-server.mjs (or npm run dev:api)
+// Port: API_PORT or 8787 — Vite proxies /api here.
 import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -20,7 +15,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-// --- minimal .env loader (only sets variables that aren't already set) ---
+// tiny .env loader — only sets vars that aren't already set
 const envPath = join(projectRoot, '.env');
 if (existsSync(envPath)) {
   for (const line of readFileSync(envPath, 'utf8').split('\n')) {
@@ -67,7 +62,7 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // --- Vercel-compatible request/response surface -------------------------
+  // Give the handlers the Vercel-style req/res they're written against.
   const rawBody = await readBody(req);
   req.body = {};
   if (rawBody) {
@@ -88,7 +83,6 @@ const server = createServer(async (req, res) => {
     res.end(JSON.stringify(payload));
     return res;
   };
-  // -------------------------------------------------------------------------
 
   try {
     const handler = await loadHandler(routePath);

@@ -1,22 +1,11 @@
-/**
- * POST /api/summarise
- *
- * Stage 2 of the pipeline: generate the structured summary for an
- * extraction.
- *
- * Body: { "id": "<extraction id>", "mode": "brief" | "standard" | "detailed",
- *         "text": "<full clean text from /api/extract>", "title": "optional" }
- *
- * The extraction is resolved statelessly (see resolveExtraction in
- * lib/server/cache.js): a warm per-instance cache entry wins, otherwise
- * the extraction is rebuilt from the `text` the client sends back. Only
- * a cold id with no text is EXTRACTION_NOT_FOUND. The extraction is
- * never re-fetched — changing the length mode only re-runs generation,
- * and a mode that was already generated is served from cache
- * (cached: true). The response reports which engine produced the
- * summary: "groq" for the LLM pipeline, or "demo-extractive" for the
- * keyless fallback (see lib/server/summarise.js).
- */
+// POST /api/summarise — { id, mode, text, title }.
+//
+// The extraction is worked out by resolveExtraction (cache.js): cache
+// hit if this instance has it, otherwise rebuilt from the text the
+// client sends back. Changing the length mode only re-runs generation,
+// and a mode already done comes from cache. The response says which
+// engine produced the summary: "groq", or "demo-extractive" (keyless
+// fallback).
 import { ApiError, requirePost, sendError } from '../lib/server/errors.js';
 import { getSummary, putSummary, resolveExtraction } from '../lib/server/cache.js';
 import { LENGTH_MODES, summariseExtraction, summaryStats } from '../lib/server/summarise.js';
@@ -38,9 +27,8 @@ export default async function handler(req, res) {
         'That extraction is not available on this server instance and no page text was sent with the request. Extract the page again.',
       );
     }
-    // Key summaries (and report the id) by the resolved extraction: a
-    // rebuilt extraction's id is its text hash, which can differ from
-    // the requested id for URL-mode pages.
+    // Use the resolved id from here — a rebuilt extraction is keyed by
+    // text hash, which can differ from the id that was requested.
     const extractionId = extraction.id;
 
     const cachedResult = getSummary(extractionId, mode);

@@ -1,6 +1,5 @@
 import type { Extraction, LengthMode, SummariseResponse, Summary } from './api';
 
-/** Render a summary as a Markdown document (used for export + copy). */
 export function summaryToMarkdown(
   extraction: Extraction,
   result: SummariseResponse,
@@ -34,7 +33,6 @@ export function summaryToMarkdown(
   return lines.filter((line, i) => line !== '' || lines[i - 1] !== '').join('\n');
 }
 
-/** Render a summary as plain text (for the clipboard). */
 export function summaryToPlainText(summary: Summary): string {
   return [
     `TL;DR: ${summary.tldr}`,
@@ -46,7 +44,6 @@ export function summaryToPlainText(summary: Summary): string {
   ].join('\n');
 }
 
-/** Trigger a browser download of a text file. */
 export function downloadTextFile(filename: string, content: string): void {
   const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
   const url = URL.createObjectURL(blob);

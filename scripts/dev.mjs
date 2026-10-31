@@ -1,10 +1,6 @@
-/**
- * `npm run dev` — start the API server and the Vite dev server together.
- *
- * Uses two child processes (no extra dependencies): the API server on
- * :8787 (scripts/dev-server.mjs) and Vite on :5173, which proxies /api to
- * the API server (see vite.config.ts). Ctrl+C stops both.
- */
+// `npm run dev` — starts the API server (:8787) and Vite (:5173)
+// together as two child processes, no extra deps. Vite proxies /api to
+// the API server (see vite.config.ts). Ctrl+C stops both.
 import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

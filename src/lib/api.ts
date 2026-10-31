@@ -1,10 +1,5 @@
-/**
- * Typed client for the /api endpoints.
- *
- * The client only ever talks to relative /api paths — in development Vite
- * proxies them to the local API server, in production Vercel serves them
- * as serverless functions. The API key never reaches this code.
- */
+// Client for the /api endpoints. Only relative paths — Vite proxies
+// them to the local API server in dev, Vercel serves them in prod.
 
 export type LengthMode = 'brief' | 'standard' | 'detailed';
 
@@ -17,12 +12,9 @@ export interface Extraction {
   siteName: string | null;
   heroImage: string | null;
   excerpt: string | null;
-  /**
-   * The full clean text. The client keeps it and sends it back with
-   * summarise/ask requests: the server cache is per serverless instance,
-   * so the id alone may not resolve on the instance that handles the
-   * next stage — the text makes the flow stateless.
-   */
+  // Full clean text. The client sends it back with summarise/ask calls
+  // because the server cache is per-instance — the id alone might not
+  // resolve on whichever instance handles the next request.
   text: string;
   wordCount: number;
   readingTimeMinutes: number;
@@ -70,7 +62,6 @@ export interface AskResponse {
   engine: 'groq' | 'demo-extractive';
 }
 
-/** Error carrying the server's stable error code (e.g. "PAYWALL_SUSPECTED"). */
 export class ApiError extends Error {
   code: string;
   constructor(code: string, message: string) {

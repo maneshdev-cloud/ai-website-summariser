@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import { api, ApiError } from '../lib/api';
 
-/**
- * "Ask this page" — grounded Q&A over the current extraction.
- * Rendered with key={extraction.id} by the parent, so its state resets
- * automatically when a different page is summarised.
- */
+// "Ask this page" box. The parent renders it with key={extraction.id},
+// so this state resets on its own when a new page is summarised.
 
 interface Exchange {
   question: string;
@@ -19,8 +16,8 @@ export default function AskBox({
   title,
 }: {
   extractionId: string;
-  /** Full page text, sent back with each question so a cold serverless
-   *  instance can rebuild the extraction (stateless flow). */
+  // Page text, sent back with each question — a cold instance needs it
+  // to rebuild the extraction.
   text: string;
   title: string;
 }) {

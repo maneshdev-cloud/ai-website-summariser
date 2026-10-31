@@ -1,20 +1,7 @@
-/**
- * POST /api/ask
- *
- * "Ask this page": grounded Q&A over an extraction.
- *
- * Body: { "id": "<extraction id>", "question": "…",
- *         "text": "<full clean text from /api/extract>", "title": "optional" }
- *
- * The extraction is resolved statelessly (see resolveExtraction in
- * lib/server/cache.js): a warm per-instance cache entry wins, otherwise
- * the extraction is rebuilt from the `text` the client sends back. Only
- * a cold id with no text is EXTRACTION_NOT_FOUND.
- *
- * The answer uses ONLY the extracted page text. When the page doesn't
- * contain the answer, the response says so (covered: false) rather than
- * guessing — see lib/server/ask.js for the grounding contract.
- */
+// POST /api/ask — { id, question, text, title }.
+// "Ask this page": answers use only the extracted page text, and if the
+// answer isn't in there the response says covered: false rather than
+// guessing. Extraction is resolved like in api/summarise.js.
 import { ApiError, requirePost, sendError } from '../lib/server/errors.js';
 import { resolveExtraction } from '../lib/server/cache.js';
 import { answerQuestion } from '../lib/server/ask.js';

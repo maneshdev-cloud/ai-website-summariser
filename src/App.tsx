@@ -9,7 +9,7 @@ import type { Extraction, LengthMode, SummariseResponse } from './lib/api';
 import { addHistoryItem, clearHistory, loadHistory } from './lib/history';
 import type { HistoryItem } from './lib/history';
 
-/** Error codes where paste-text mode is the sensible recovery path. */
+// For these errors, paste-text mode is the way around the problem.
 const PASTE_SUGGEST_CODES = new Set([
   'PAYWALL_SUSPECTED',
   'THIN_CONTENT',
@@ -64,11 +64,8 @@ export default function App() {
     { label: 'Writing summary' },
   ];
 
-  /**
-   * The two-stage pipeline the UI mirrors: /api/extract, then
-   * /api/summarise. Stage timers advance the checklist while each real
-   * request is in flight.
-   */
+  // Two calls, matching the stage checklist: extract, then summarise.
+  // The timers just advance the checklist while requests are in flight.
   async function runPipeline(doExtract: () => Promise<Extraction>, usedMode: LengthMode) {
     clearTimers();
     setError(null);
@@ -88,9 +85,8 @@ export default function App() {
       );
       setStage(2);
       later(() => setStage(3), 1500);
-      // Send the extracted text back with the request: the summarise
-      // call may land on a different serverless instance than extract
-      // did, where the id alone would not resolve (stateless flow).
+      // Send the text back too — summarise might land on a different
+      // serverless instance, where this id means nothing on its own.
       const res = await api.summarise(ex.id, usedMode, ex.text, ex.title);
       clearTimers();
       setResult(res);
@@ -123,7 +119,7 @@ export default function App() {
   const handleText = (text: string, title?: string) =>
     void runPipeline(() => api.extractText(text, title), mode);
 
-  /** Length-mode change: generation only — the extraction is not re-fetched. */
+  // Mode change re-runs generation only, no re-fetch.
   async function handleModeChange(next: LengthMode) {
     if (!extraction || next === mode || modeBusy) return;
     setMode(next);
@@ -143,8 +139,8 @@ export default function App() {
 
   const handleHistorySelect = (item: HistoryItem) => {
     setMode('standard');
-    // Reload from the stored page text when we have it — stateless and
-    // instant, no refetch. Older/oversized entries fall back to the URL.
+    // Reload from the stored text when there is any (no refetch).
+    // Entries without text fall back to their URL.
     if (item.text) {
       void runPipeline(() => api.extractText(item.text as string, item.title), 'standard');
     } else {

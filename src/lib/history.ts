@@ -1,13 +1,7 @@
-/**
- * Summary history, kept in localStorage.
- *
- * Only URL-based summaries are stored (pasted text isn't kept, for
- * privacy and because it can't be reloaded). Each entry also keeps the
- * page's clean text (up to a cap), so clicking an entry can reload it
- * statelessly from the stored text — no refetch, and no reliance on a
- * warm server instance. Entries without stored text fall back to
- * re-running the flow for their URL.
- */
+// Summary history, kept in localStorage. Only URL summaries are stored
+// (pasted text isn't kept). Entries keep the page text when it fits, so
+// clicking one can reload from the stored text instead of refetching;
+// entries without text fall back to re-running their URL.
 
 export interface HistoryItem {
   id: string;
@@ -15,17 +9,13 @@ export interface HistoryItem {
   title: string;
   tldr: string;
   timestamp: number;
-  /** Full clean page text, when it fit under the storage cap. */
-  text?: string;
+  text?: string; // full page text, when it fit under the cap below
 }
 
 const STORAGE_KEY = 'ai-website-summariser:history';
 const MAX_ITEMS = 20;
-/**
- * Per-entry text cap. A page's clean text is typically ~100KB and the
- * localStorage budget is ~5MB, so 20 capped entries stay well inside
- * it; anything larger is stored without its text.
- */
+// A page's clean text is usually ~100KB and localStorage allows ~5MB,
+// so this cap keeps 20 entries comfortably inside that.
 const MAX_TEXT_CHARS = 200_000;
 
 export function loadHistory(): HistoryItem[] {
@@ -50,8 +40,8 @@ export function addHistoryItem(item: HistoryItem): HistoryItem[] {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
-    // Quota most likely blown by the stored page texts — drop them and
-    // retry slimmer before giving up; history itself is a nicety.
+    // Probably the quota, because of the stored texts — retry without
+    // them. History is a nicety, not worth failing over.
     try {
       const slim = next.map((h) => ({
         id: h.id,

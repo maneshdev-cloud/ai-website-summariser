@@ -1,13 +1,7 @@
-/**
- * Cache + stateless-resolution tests (no network).
- *
- * The production bug these lock in: on serverless platforms each API
- * route runs in its own function instance with its own in-memory cache,
- * so an id created by /api/extract may be unknown to the instance that
- * handles /api/summarise. resolveExtraction must rebuild the extraction
- * from the client-supplied text instead of giving up — and must still
- * fail cleanly when there is no text to rebuild from.
- */
+// Cache + resolution tests (no network). The case that matters: on
+// serverless, the instance handling summarise may never have seen the
+// id that extract created, so resolveExtraction has to rebuild from the
+// text the client sends back — and fail cleanly when there is none.
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {

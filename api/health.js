@@ -1,11 +1,6 @@
-/**
- * GET /api/health
- *
- * Tiny status endpoint. The UI uses `groqConfigured` to show a "demo mode"
- * badge when the server has no GROQ_API_KEY, so nobody mistakes the
- * extractive fallback for the full AI pipeline. The key itself is, of
- * course, never exposed — only whether one exists.
- */
+// GET /api/health — the UI checks groqConfigured to show a demo-mode
+// badge when the server has no API key. Only says whether a key exists,
+// never the key itself.
 import { hasGroqKey, MODELS } from '../lib/server/groq.js';
 
 export default function handler(req, res) {

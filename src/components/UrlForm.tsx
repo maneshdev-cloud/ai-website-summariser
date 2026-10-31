@@ -11,8 +11,8 @@ interface Props {
   busy: boolean;
   onSubmitUrl: (url: string) => void;
   onSubmitText: (text: string, title?: string) => void;
-  /** Increment this to programmatically switch the form to paste-text mode
-   *  (used when a URL fails because the page is paywalled or unreadable). */
+  // Bump this to force the form into paste-text mode (used when a URL
+  // fails because the page is paywalled or unreadable).
   textModeSignal: number;
 }
 

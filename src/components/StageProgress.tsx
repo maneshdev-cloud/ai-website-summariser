@@ -1,15 +1,6 @@
-/**
- * Staged progress indicator.
- *
- * The brief asks for "a loading indicator" — this app shows the actual
- * pipeline stages instead of one anonymous spinner, because the stages
- * are real: the client first calls /api/extract (fetch + Readability on
- * the server), then /api/summarise (chunking, map-reduce, generation).
- *
- * `current` is the index of the active stage; stages before it render as
- * done, stages after it as pending, and current === stages.length means
- * everything finished.
- */
+// Progress checklist with the real pipeline stages (extract, then
+// summarise) instead of a plain spinner. `current` is the active stage
+// index; current === stages.length means everything finished.
 
 export interface Stage {
   label: string;

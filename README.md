@@ -4,6 +4,8 @@ Paste any article URL and get a clean, structured summary — a one-line **TL;DR
 
 Built with React + TypeScript on the front, and a small Node serverless backend that fetches the page itself, extracts the article with Mozilla Readability, and summarises it with Groq using chunked map-reduce — no third-party "summariser API" in the middle.
 
+**Live demo:** https://ai-website-summariser.vercel.app
+
 ## Screenshots
 
 <!-- TODO: add screenshots after deploying -->

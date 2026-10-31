@@ -8,9 +8,12 @@
  * Body (text mode): { "text": "…", "title": "optional" }
  *
  * Response: the extraction's public view — metadata, word/reading stats,
- * HTML-vs-clean-text stats, chunk count, and a short text preview. The
- * full clean text stays server-side in the cache, keyed by `id`; the
- * client passes that id to /api/summarise and /api/ask.
+ * HTML-vs-clean-text stats, chunk count, a short text preview, and the
+ * full clean `text`. The extraction is also cached server-side keyed by
+ * `id`, but that cache is per-instance and best-effort: the client keeps
+ * the text and sends it back with /api/summarise and /api/ask requests,
+ * so those stages work even on a cold serverless instance that never
+ * saw this extraction (see resolveExtraction in lib/server/cache.js).
  *
  * Repeat requests for the same URL/text are cache hits (cached: true)
  * and perform no fetch.
@@ -56,6 +59,10 @@ export default async function handler(req, res) {
     const { chunks, totalChunks, truncated } = splitIntoChunks(extraction.text);
     return res.status(200).json({
       ...publicExtraction(extraction, cached),
+      // The full clean text goes to the client on purpose: it is the
+      // client's own fetched page content, and returning it is what lets
+      // summarise/ask resolve the extraction statelessly (see above).
+      text: extraction.text,
       chunkCount: chunks.length,
       totalChunks,
       truncated,

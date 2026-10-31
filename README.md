@@ -40,7 +40,7 @@ Built with React + TypeScript on the front, and a small Node serverless backend 
                                           validate { tldr, keyPoints, detailedSummary,
                                                      topics, tone } ──► UI
 
- Ask ──► cached page text + question ──► Groq (temp 0.1, JSON { covered, answer })
+ Ask ──► page text + question ──► Groq (temp 0.1, JSON { covered, answer })
          instruction: answer ONLY from the text; if it isn't there, say
          "This page doesn't cover that."
 ```
@@ -54,8 +54,8 @@ Built with React + TypeScript on the front, and a small Node serverless backend 
 ```
 Browser (React + Vite + Tailwind)
    │  POST /api/extract    { url } or { text, title }
-   │  POST /api/summarise  { id, mode }
-   │  POST /api/ask        { id, question }
+   │  POST /api/summarise  { id, mode, text?, title? }
+   │  POST /api/ask        { id, question, text?, title? }
    ▼
 API handlers (Vercel serverless functions — plain (req, res) handlers)
    │
@@ -71,6 +71,8 @@ API handlers (Vercel serverless functions — plain (req, res) handlers)
 ```
 
 Locally, `scripts/dev-server.mjs` (plain `node:http`) mounts the exact same handler files behind a thin Vercel-compatible adapter, and Vite proxies `/api` to it — so development runs the production code paths.
+
+**Serverless note:** the in-memory cache (`lib/server/cache.js`) lives inside a single function instance. Locally one process serves every request, so an extraction stored by `/api/extract` is always there for `/api/summarise` and `/api/ask` — but on Vercel each route runs as its own serverless function, and a cold instance has an empty cache. The flow is therefore **stateless by design, with the cache as an optimisation only**: `/api/extract` returns the full clean text to the client, and the client sends that text (plus the title) back with every summarise/ask request. The server first tries the cache by id; on a miss it rebuilds the extraction from the supplied text (`resolveExtraction` in `lib/server/cache.js`) and carries on. `EXTRACTION_NOT_FOUND` only happens when an id is cold *and* no text was sent. The cache still earns its keep — repeat requests on a warm instance skip the fetch and the LLM calls entirely — it is just never load-bearing.
 
 ## Folder structure
 
@@ -145,15 +147,15 @@ All endpoints return JSON. Errors have the shape `{ "error": { "code": string, "
 
 ### `POST /api/extract`
 Body: `{ "url": "https://…" }` or `{ "text": "…", "title": "optional" }`.
-Returns the extraction's public view: `id`, `title`, `byline`, `siteName`, `heroImage`, `wordCount`, `readingTimeMinutes`, `stats { rawBytes, cleanBytes, noiseRemovedPct }`, `chunkCount`, `totalChunks`, `truncated`, `cached`, `textPreview`. The full text stays server-side in the cache.
+Returns the extraction's public view: `id`, `title`, `byline`, `siteName`, `heroImage`, `wordCount`, `readingTimeMinutes`, `stats { rawBytes, cleanBytes, noiseRemovedPct }`, `chunkCount`, `totalChunks`, `truncated`, `cached`, `textPreview` — plus the full clean `text`, which the client keeps and sends back with the follow-up requests below so they resolve statelessly (see the Serverless note under Architecture).
 
 ### `POST /api/summarise`
-Body: `{ "id": "<extraction id>", "mode": "brief" | "standard" | "detailed" }`.
-Returns `{ summary: { tldr, keyPoints, detailedSummary, topics, tone }, engine: "groq" | "demo-extractive", mapReduce, chunkCount, truncated, cached, stats { summaryWordCount, summaryReadingTimeMinutes, readingTimeSavedMinutes } }`.
+Body: `{ "id": "<extraction id>", "mode": "brief" | "standard" | "detailed", "text": "<full clean text from /api/extract>", "title": "optional" }`. The `text`/`title` fields are optional for same-instance callers but are what let a cold serverless instance rebuild the extraction; without them, an unknown id is a 404 `EXTRACTION_NOT_FOUND`.
+Returns `{ id, summary: { tldr, keyPoints, detailedSummary, topics, tone }, engine: "groq" | "demo-extractive", mapReduce, chunkCount, truncated, cached, stats { summaryWordCount, summaryReadingTimeMinutes, readingTimeSavedMinutes } }`. Note the returned `id` is the resolved extraction's id — for a rebuilt extraction that is the text hash, which can differ from the requested id.
 
 ### `POST /api/ask`
-Body: `{ "id": "<extraction id>", "question": "…" }`.
-Returns `{ covered: boolean, answer: string, engine }`.
+Body: `{ "id": "<extraction id>", "question": "…", "text": "<full clean text from /api/extract>", "title": "optional" }` — same stateless resolution as summarise.
+Returns `{ id, covered: boolean, answer: string, engine }`.
 
 ### `GET /api/health`
 Returns `{ ok, groqConfigured, engine, models }` — used by the UI to badge demo mode. Never exposes the key itself.
@@ -162,7 +164,7 @@ Returns `{ ok, groqConfigured, engine, models }` — used by the UI to badge dem
 
 1. Push this repo to GitHub and import it in Vercel (framework preset: Vite).
 2. Add the `GROQ_API_KEY` environment variable (Production + Preview).
-3. Deploy. The functions in `/api` are picked up automatically; no build changes are needed. The in-memory cache is per warm instance, which is fine at this scale.
+3. Deploy. The functions in `/api` are picked up automatically; no build changes are needed. The in-memory cache is per warm instance and best-effort only — the request flow is stateless by design (see the Serverless note under Architecture), so cold instances work too.
 
 Any static host + separate Node host also works: serve `dist/` and run the handlers behind the same `/api` paths.
 
@@ -179,7 +181,7 @@ Any static host + separate Node host also works: serve `dist/` and run the handl
 npm test
 ```
 
-Covers the SSRF guard (blocked hosts/IPs, schemes, credentials, mapped-IPv6), chunking (boundaries, overlap, size limits, the chunk cap), and extraction against a saved HTML fixture (metadata, boilerplate stripping, paywall/thin-content refusal, paste mode).
+Covers the SSRF guard (blocked hosts/IPs, schemes, credentials, mapped-IPv6), chunking (boundaries, overlap, size limits, the chunk cap), extraction against a saved HTML fixture (metadata, boilerplate stripping, paywall/thin-content refusal, paste mode), and stateless extraction resolution (rebuild from client-supplied text on a cold cache, failure without it, warm-cache preference).
 
 ## License
 

@@ -88,7 +88,10 @@ export default function App() {
       );
       setStage(2);
       later(() => setStage(3), 1500);
-      const res = await api.summarise(ex.id, usedMode);
+      // Send the extracted text back with the request: the summarise
+      // call may land on a different serverless instance than extract
+      // did, where the id alone would not resolve (stateless flow).
+      const res = await api.summarise(ex.id, usedMode, ex.text, ex.title);
       clearTimers();
       setResult(res);
       setStage(4);
@@ -101,6 +104,7 @@ export default function App() {
             title: ex.title,
             tldr: res.summary.tldr,
             timestamp: Date.now(),
+            text: ex.text,
           }),
         );
       }
@@ -126,7 +130,7 @@ export default function App() {
     setModeBusy(true);
     setModeError(null);
     try {
-      const res = await api.summarise(extraction.id, next);
+      const res = await api.summarise(extraction.id, next, extraction.text, extraction.title);
       setResult(res);
     } catch (err) {
       setModeError(
@@ -139,7 +143,13 @@ export default function App() {
 
   const handleHistorySelect = (item: HistoryItem) => {
     setMode('standard');
-    void runPipeline(() => api.extractUrl(item.url), 'standard');
+    // Reload from the stored page text when we have it — stateless and
+    // instant, no refetch. Older/oversized entries fall back to the URL.
+    if (item.text) {
+      void runPipeline(() => api.extractText(item.text as string, item.title), 'standard');
+    } else {
+      void runPipeline(() => api.extractUrl(item.url), 'standard');
+    }
   };
 
   return (
@@ -204,7 +214,12 @@ export default function App() {
               onModeChange={handleModeChange}
               modeBusy={modeBusy}
             />
-            <AskBox key={extraction.id} extractionId={extraction.id} />
+            <AskBox
+              key={extraction.id}
+              extractionId={extraction.id}
+              text={extraction.text}
+              title={extraction.title}
+            />
           </>
         )}
 

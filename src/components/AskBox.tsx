@@ -13,7 +13,17 @@ interface Exchange {
   covered: boolean;
 }
 
-export default function AskBox({ extractionId }: { extractionId: string }) {
+export default function AskBox({
+  extractionId,
+  text,
+  title,
+}: {
+  extractionId: string;
+  /** Full page text, sent back with each question so a cold serverless
+   *  instance can rebuild the extraction (stateless flow). */
+  text: string;
+  title: string;
+}) {
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +36,7 @@ export default function AskBox({ extractionId }: { extractionId: string }) {
     setError(null);
     setLoading(true);
     try {
-      const res = await api.ask(extractionId, question);
+      const res = await api.ask(extractionId, question, text, title);
       setExchanges((prev) => [...prev, { question, answer: res.answer, covered: res.covered }]);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');

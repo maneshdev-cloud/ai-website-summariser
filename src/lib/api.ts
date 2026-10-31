@@ -17,6 +17,13 @@ export interface Extraction {
   siteName: string | null;
   heroImage: string | null;
   excerpt: string | null;
+  /**
+   * The full clean text. The client keeps it and sends it back with
+   * summarise/ask requests: the server cache is per serverless instance,
+   * so the id alone may not resolve on the instance that handles the
+   * next stage — the text makes the flow stateless.
+   */
+  text: string;
   wordCount: number;
   readingTimeMinutes: number;
   stats: { rawBytes: number; cleanBytes: number; noiseRemovedPct: number };
@@ -101,7 +108,8 @@ export const api = {
   extractUrl: (url: string) => post<Extraction>('/api/extract', { url }),
   extractText: (text: string, title?: string) =>
     post<Extraction>('/api/extract', { text, title }),
-  summarise: (id: string, mode: LengthMode) =>
-    post<SummariseResponse>('/api/summarise', { id, mode }),
-  ask: (id: string, question: string) => post<AskResponse>('/api/ask', { id, question }),
+  summarise: (id: string, mode: LengthMode, text?: string, title?: string) =>
+    post<SummariseResponse>('/api/summarise', { id, mode, text, title }),
+  ask: (id: string, question: string, text?: string, title?: string) =>
+    post<AskResponse>('/api/ask', { id, question, text, title }),
 };

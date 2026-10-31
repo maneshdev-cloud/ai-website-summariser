@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+body {
+  background-color: #eef2f7;
+  color: #0f172a;
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background-color: #c7d2fe;
+}
